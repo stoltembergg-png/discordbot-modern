@@ -196,6 +196,9 @@ The Community plugin adds the following commands:
 !warnings @usuario
 !clearwarnings @usuario
 !giveaway 1h | prêmio
+!ticket setup #categoria @suporte
+!ticket create
+!closeticket
 !welcome #boas-vindas Bem-vindo, {user}!
 !tempvoice #criar-sala
 ```

@@ -19,6 +19,8 @@ exports.commands = [
   "warnings",
   "clearwarnings",
   "giveaway",
+  "ticket",
+  "closeticket",
   "welcome",
   "tempvoice",
 ];
@@ -184,6 +186,54 @@ exports.giveaway = {
         console.error(`Unable to finish giveaway: ${error.message}`);
       }
     }, durationMs);
+  },
+};
+
+exports.ticket = {
+  usage: "setup <#categoria> [@cargo] | create",
+  description: "Configura ou cria um ticket privado de suporte.",
+  process: async function (bot, msg, suffix) {
+    if (!msg.guild) return msg.channel.send("Tickets só podem ser usados em servidores.");
+    const settings = store.value.settings[guildId(msg)] || {};
+    const args = suffix.trim();
+    if (args.toLowerCase().startsWith("setup")) {
+      if (!isModerator(msg)) return msg.channel.send("Você precisa da permissão de moderador.");
+      const category = msg.mentions.channels.first();
+      const role = msg.mentions.roles.first();
+      if (!category || category.type !== "GUILD_CATEGORY") return msg.channel.send(`Uso: ${this.usage}`);
+      store.update((state) => {
+        state.settings[guildId(msg)] = {
+          ...(state.settings[guildId(msg)] || {}),
+          ticketCategoryId: category.id,
+          ticketRoleId: role?.id || null,
+        };
+      });
+      return msg.channel.send("✅ Sistema de tickets configurado. Use `!ticket create`.");
+    }
+    if (args.toLowerCase() !== "create" && args) return msg.channel.send(`Uso: ${this.usage}`);
+    if (!settings.ticketCategoryId) return msg.channel.send("Um moderador precisa configurar os tickets primeiro.");
+    const existing = msg.guild.channels.cache.find((channel) => channel.name === `ticket-${msg.author.id}`);
+    if (existing) return msg.channel.send(`Você já possui um ticket: ${existing}`);
+    const overwrites = [
+      { id: msg.guild.id, deny: ["VIEW_CHANNEL"] },
+      { id: msg.author.id, allow: ["VIEW_CHANNEL", "SEND_MESSAGES", "READ_MESSAGE_HISTORY"] },
+    ];
+    if (settings.ticketRoleId) overwrites.push({ id: settings.ticketRoleId, allow: ["VIEW_CHANNEL", "SEND_MESSAGES", "READ_MESSAGE_HISTORY"] });
+    const ticket = await msg.guild.channels.create(`ticket-${msg.author.id}`, {
+      type: "GUILD_TEXT",
+      parent: settings.ticketCategoryId,
+      permissionOverwrites: overwrites,
+    });
+    return ticket.send(`🎫 Ticket de ${msg.author}. Um membro da equipe responderá em breve. Use !closeticket para fechar.`);
+  },
+};
+
+exports.closeticket = {
+  description: "Fecha o ticket atual.",
+  process: async function (bot, msg) {
+    if (!msg.channel.name.startsWith("ticket-")) return msg.channel.send("Este comando só pode ser usado dentro de um ticket.");
+    await msg.channel.send("🔒 Ticket encerrado.");
+    return msg.channel.delete();
   },
 };
 
