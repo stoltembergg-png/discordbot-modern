@@ -183,3 +183,24 @@ npm start
 
 To configure credentials, copy `auth.json.example` to `auth.json`, or provide
 `bot_token` and the optional integration credentials as environment variables.
+
+## Community features
+
+The Community plugin adds the following commands:
+
+```text
+!poll pergunta | opção 1 | opção 2
+!suggest ideia
+!remind 2h revisar o relatório
+!warn @usuario motivo
+!warnings @usuario
+!clearwarnings @usuario
+!giveaway 1h | prêmio
+!welcome #boas-vindas Bem-vindo, {user}!
+!tempvoice #criar-sala
+```
+
+Moderation commands require the Discord `Kick Members` permission. Welcome and
+temporary voice features also require enabling the **Server Members Intent** in
+the Discord Developer Portal. Community state is stored in `data/community.json`,
+which is excluded from Git.

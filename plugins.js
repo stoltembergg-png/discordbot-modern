@@ -36,6 +36,7 @@ function preload_plugins(hooks){
 
 function load_plugins(hooks){
     var dbot = require("./discord_bot.js");
+    hooks.bot = dbot.bot;
     var commandCount = 0;
     for (var i = 0; i < plugin_folders.length; i++) {
         if (!isPluginEnabled(plugin_folders[i])) {

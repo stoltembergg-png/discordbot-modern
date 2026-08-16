@@ -310,6 +310,7 @@ function updateMessagebox() {
 
 const intents = new Discord.Intents([
   Discord.Intents.FLAGS.GUILDS,
+  Discord.Intents.FLAGS.GUILD_MEMBERS,
   Discord.Intents.FLAGS.GUILD_MESSAGES,
   Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
   Discord.Intents.FLAGS.DIRECT_MESSAGES,
@@ -328,7 +329,11 @@ const bot = new Discord.Client({
 
 let hooks = {
   onMessage: [],
+  onGuildMemberAdd: [],
+  onVoiceStateUpdate: [],
 };
+
+exports.bot = bot;
 
 bot.on("ready", function () {
   require("./plugins.js").init(hooks);
@@ -522,9 +527,19 @@ bot.on("messageCreate", async (msg) => {
     msg = await msg.fetch();
   }
   if (!checkMessageForCommand(msg, false)) {
-    for (msgListener of hooks.onMessage) {
+    for (const msgListener of hooks.onMessage) {
       msgListener(msg);
     }
+  }
+});
+bot.on("guildMemberAdd", async (member) => {
+  for (const listener of hooks.onGuildMemberAdd) {
+    await listener(member);
+  }
+});
+bot.on("voiceStateUpdate", async (oldState, newState) => {
+  for (const listener of hooks.onVoiceStateUpdate) {
+    await listener(oldState, newState);
   }
 });
 bot.on("messageUpdate", (oldMessage, newMessage) => {
