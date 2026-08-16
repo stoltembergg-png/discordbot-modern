@@ -16,6 +16,9 @@ exports.commands = [
   "suggest",
   "remind",
   "warn",
+  "timeout",
+  "kickuser",
+  "banuser",
   "warnings",
   "clearwarnings",
   "giveaway",
@@ -137,6 +140,47 @@ exports.warn = {
       state.warnings[key].push(warning);
     });
     return msg.channel.send(`⚠️ ${member.user.tag} recebeu uma advertência: ${reason}`);
+  },
+};
+
+exports.timeout = {
+  usage: "<@usuário> <duração> [motivo]",
+  description: "Aplica timeout temporário a um membro.",
+  process: async function (bot, msg, suffix) {
+    if (!isModerator(msg)) return msg.channel.send("Você precisa da permissão de moderador.");
+    const member = msg.mentions.members.first();
+    const parts = suffix.replace(/<@!?\d+>/, "").trim().split(/\s+/);
+    const durationMs = parseDuration(parts.shift());
+    const reason = parts.join(" ") || "Sem motivo informado";
+    if (!member || !durationMs || durationMs > 28 * 24 * 60 * 60 * 1000) return msg.channel.send(`Uso: ${this.usage}`);
+    await member.timeout(durationMs, reason);
+    return msg.channel.send(`🔇 ${member.user.tag} recebeu timeout por ${reason}.`);
+  },
+};
+
+exports.kickuser = {
+  usage: "<@usuário> [motivo]",
+  description: "Remove um membro do servidor.",
+  process: async function (bot, msg, suffix) {
+    if (!isModerator(msg)) return msg.channel.send("Você precisa da permissão de moderador.");
+    const member = msg.mentions.members.first();
+    const reason = suffix.replace(/<@!?\d+>/, "").trim() || "Sem motivo informado";
+    if (!member) return msg.channel.send(`Uso: ${this.usage}`);
+    await member.kick(reason);
+    return msg.channel.send(`👢 ${member.user.tag} foi expulso: ${reason}`);
+  },
+};
+
+exports.banuser = {
+  usage: "<@usuário> [motivo]",
+  description: "Bane um membro do servidor.",
+  process: async function (bot, msg, suffix) {
+    if (!msg.member?.permissions?.has("BAN_MEMBERS")) return msg.channel.send("Você precisa da permissão de banir membros.");
+    const member = msg.mentions.members.first();
+    const reason = suffix.replace(/<@!?\d+>/, "").trim() || "Sem motivo informado";
+    if (!member) return msg.channel.send(`Uso: ${this.usage}`);
+    await member.ban({ reason });
+    return msg.channel.send(`🔨 ${member.user.tag} foi banido: ${reason}`);
   },
 };
 

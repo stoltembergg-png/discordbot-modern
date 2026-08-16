@@ -193,6 +193,9 @@ The Community plugin adds the following commands:
 !suggest ideia
 !remind 2h revisar o relatório
 !warn @usuario motivo
+!timeout @usuario 10m motivo
+!kickuser @usuario motivo
+!banuser @usuario motivo
 !warnings @usuario
 !clearwarnings @usuario
 !giveaway 1h | prêmio
