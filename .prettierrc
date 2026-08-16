@@ -1,0 +1,10 @@
+{
+    "useTabs": false,
+    "printWidth": 80,
+    "tabWidth": 2,         // Updated to 2 spaces per indentation-level as recommended.
+    "singleQuote": false,
+    "trailingComma": "none",
+    "jsxBracketSameLine": false,
+    "parser": "babel",    // Updated to use Babel parser instead of babylon.
+    "rcVerbose": true
+}
