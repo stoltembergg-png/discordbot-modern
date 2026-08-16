@@ -10,6 +10,12 @@ function getDirectories(srcpath) {
 var plugin_folders;
 var plugin_directory;
 var exec_dir;
+const DANGEROUS_PLUGIN_FOLDERS = new Set();
+
+function isPluginEnabled(folder) {
+    return !DANGEROUS_PLUGIN_FOLDERS.has(folder) ||
+        process.env.DISCORD_BOT_ENABLE_DANGEROUS_PLUGINS === "true";
+}
 try { //try loading plugins from a non standalone install first
     plugin_directory = "./plugins/";
     plugin_folders = getDirectories(plugin_directory);
@@ -23,57 +29,18 @@ exports.init = function(hooks){
     preload_plugins(hooks);
 };
 
-function createNpmDependenciesArray (packageFilePath) {
-    var p = require(packageFilePath);
-    if (!p.dependencies) return [];
-    var deps = [];
-    for (var mod in p.dependencies) {
-        deps.push(mod + "@" + p.dependencies[mod]);
-    }
-
-    return deps;
-}
-
 function preload_plugins(hooks){
-    var deps = [];
-    var npm = require("npm");
-    for (var i = 0; i < plugin_folders.length; i++) {
-        try{
-            require(plugin_directory + plugin_folders[i]);
-        } catch(e) {
-            deps = deps.concat(createNpmDependenciesArray(plugin_directory + plugin_folders[i] + "/package.json"));
-        }
-    }
-    if(deps.length > 0) {
-        npm.load({
-            loaded: false
-        }, function (err) {
-            // catch errors
-            if (plugin_directory != "./plugins/"){ //install plugin modules for Electrify builds
-                npm.prefix = exec_dir;
-                console.log(npm.prefix);
-            }
-            npm.commands.install(deps, function (er, data) {
-                if(er){
-                    console.log(er);
-                }
-                console.log("Plugin preload complete");
-                load_plugins(hooks)
-            });
-
-            if (err) {
-                console.log("preload_plugins: " + err);
-            }
-        });
-    } else {
-        load_plugins(hooks)
-    }
+    // Dependencies must be installed during build/deploy, never at runtime.
+    load_plugins(hooks);
 }
 
 function load_plugins(hooks){
     var dbot = require("./discord_bot.js");
     var commandCount = 0;
     for (var i = 0; i < plugin_folders.length; i++) {
+        if (!isPluginEnabled(plugin_folders[i])) {
+            continue;
+        }
         var plugin;
         try{
             plugin = require(plugin_directory + plugin_folders[i])

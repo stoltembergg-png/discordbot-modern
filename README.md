@@ -158,3 +158,28 @@ Make sure you also have your Google server API key, which is located in the "you
 Please check the GitHub issues page on this project. We get a lot of similar questions, and it is likely that yours has already been answered. 
 
 If you still need help, feel free to join us on [Discord](https://discord.gg/m29GJBN).
+
+# Modernized standalone edition
+
+This repository is maintained as an independent project and is not a GitHub fork.
+
+Security and reliability changes include:
+
+- `npm ci` is supported by a synchronized lockfile.
+- Node.js 18 or newer is required.
+- Legacy code-execution and remote self-update commands were removed.
+- Plugins no longer install npm dependencies while the bot is running.
+- Startup fails with a non-zero exit code when `bot_token` is missing.
+- Permission handling is covered by automated tests.
+
+Install dependencies before starting the bot:
+
+```bash
+npm ci --ignore-scripts
+npm test
+npm run syntax
+npm start
+```
+
+To configure credentials, copy `auth.json.example` to `auth.json`, or provide
+`bot_token` and the optional integration credentials as environment variables.

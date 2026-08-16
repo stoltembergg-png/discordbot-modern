@@ -34,52 +34,27 @@ try {
 }
 const VoiceManager = require('./voice_manager');
 
-const AuthDetails = require("./auth.js").getAuthDetails();
+const { getAuthDetails, validateAuthDetails } = require("./auth.js");
+const { createPermissions } = require("./permissions.js");
 
-if (!AuthDetails.hasOwnProperty("bot_token") || AuthDetails.bot_token === "") {
-  console.error(
-    "Please create an auth.json or specify environmental variables, the bot cannot run without a bot_token"
-  ); // send message for error - no token
-  process.exit();
+const AuthDetails = getAuthDetails();
+const authErrors = validateAuthDetails(AuthDetails);
+if (authErrors.length > 0) {
+  console.error(`Configuration error: ${authErrors.join(", ")}`);
+  process.exitCode = 1;
+  return;
 }
 
-// Load custom permissions
-let dangerousCommands = ["exec", "eval", "pullanddeploy", "setUsername", "cmdauth", "presence"]; // set array of dangerous commands
-let Permissions = {};
+// Load custom permissions and guarantee safe defaults for dangerous commands.
+let permissionData = {};
 try {
-  Permissions = require("./permissions.json");
+  permissionData = require("./permissions.json");
 } catch (e) {
-  Permissions.global = {};
-  Permissions.users = {};
+  permissionData = {};
 }
-
-for (let i = 0; i < dangerousCommands.length; i++) {
-  let cmd = dangerousCommands[i];
-  if (!Permissions.global.hasOwnProperty(cmd)) {
-    Permissions.global[cmd] = false;
-  }
-}
-Permissions.checkPermission = function (userid, permission) {
-  //console.log("Checking " + permission + " permission for " + userid);
-  try {
-    let allowed = true;
-    try {
-      if (Permissions.global.hasOwnProperty(permission)) {
-        allowed = Permissions.global[permission] === true;
-      }
-    } catch (e) { }
-    try {
-      if (Permissions.users[userid].hasOwnProperty("*")) {
-        allowed = Permissions.users[userid]["*"] === true;
-      }
-      if (Permissions.users[userid].hasOwnProperty(permission)) {
-        allowed = Permissions.users[userid][permission] === true;
-      }
-    } catch (e) { }
-    return allowed;
-  } catch (e) { }
-  return false;
-};
+const PermissionStore = createPermissions(permissionData);
+const Permissions = PermissionStore.permissions;
+Permissions.checkPermission = PermissionStore.checkPermission;
 fs.writeFile(
   "./permissions.json",
   JSON.stringify(Permissions, null, 2),
@@ -253,7 +228,6 @@ commands = {
     description:
       "Gets/toggles command usage permissions for the specified user.",
     process: function (bot, msg, suffix) {
-      let Permissions = require("./permissions.json");
       let fs = require("fs");
 
       let args = suffix.split(" ");
@@ -270,7 +244,7 @@ commands = {
         msg.channel.send("Could not find user.");
       } else {
         if (commands[cmd] || cmd === "*") {
-          let canUse = Permissions.checkPermission(userid, cmd);
+          let canUse = PermissionStore.checkPermission(userid, cmd);
           let strResult;
           if (cmd === "*") {
             strResult = "All commands";
@@ -282,11 +256,8 @@ commands = {
               "User permissions for " + strResult + " are " + canUse
             );
           } else if (action.toUpperCase() === "TOGGLE") {
-            if (Permissions.users.hasOwnProperty(userid)) {
-              Permissions.users[userid][cmd] = !canUse;
-            } else {
-              Permissions.users[userid].append({ [cmd]: !canUse });
-            }
+            const nextValue = PermissionStore.toggleUserPermission(userid, cmd);
+            Permissions.users[userid][cmd] = nextValue;
             fs.writeFile(
               "./permissions.json",
               JSON.stringify(Permissions, null, 2)
