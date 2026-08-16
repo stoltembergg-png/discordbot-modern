@@ -165,7 +165,7 @@ This repository is maintained as an independent project and is not a GitHub fork
 
 Security and reliability changes include:
 
-- `npm ci` is supported by a synchronized lockfile.
+- The lockfile is maintained and installation skips unsafe lifecycle downloads.
 - Node.js 18 or newer is required.
 - Legacy code-execution and remote self-update commands were removed.
 - Plugins no longer install npm dependencies while the bot is running.
@@ -175,7 +175,7 @@ Security and reliability changes include:
 Install dependencies before starting the bot:
 
 ```bash
-npm ci --ignore-scripts --include=optional --include=peer
+npm install --ignore-scripts --no-audit
 npm test
 npm run syntax
 npm start
