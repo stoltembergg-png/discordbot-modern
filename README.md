@@ -175,7 +175,7 @@ Security and reliability changes include:
 Install dependencies before starting the bot:
 
 ```bash
-npm ci --ignore-scripts
+npm ci --ignore-scripts --include=optional --include=peer
 npm test
 npm run syntax
 npm start
